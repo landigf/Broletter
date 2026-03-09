@@ -85,7 +85,7 @@ output:
   data_directory: "data"
 
 telegram:
-  channel_username: ""   # Public channel for subscribers (e.g. "BroletterChannel"). Leave empty to disable.
+  channel_username: "Broletter"
 
 schedule:
   daily_hour: 23
