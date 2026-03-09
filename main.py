@@ -277,6 +277,12 @@ def _parse_sections_from_markdown(md: str) -> dict[str, str]:
 
 def cmd_remind(args):
     """Send a short morning reminder to check the newsletter."""
+    # Only send during morning hours (5 AM - 2 PM)
+    hour = datetime.now().hour
+    if hour < 5 or hour >= 14:
+        print(f"⏭  Not morning ({hour}:00). Skipping reminder.")
+        return
+
     if not os.environ.get("TELEGRAM_BOT_TOKEN", ""):
         print("❌ Set TELEGRAM_BOT_TOKEN")
         sys.exit(1)
