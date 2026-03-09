@@ -8,3 +8,5 @@ output/
 
 # Environment
 .env
+
+# docs/ is NOT ignored — it's the GitHub Pages site

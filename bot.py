@@ -213,6 +213,44 @@ async def send_newsletter(date: str, sections: dict[str, str], paper_topics: lis
     save_telegram_state(state)
 
 
+async def publish_to_channel(date: str, sections: dict[str, str], channel_username: str):
+    """Post the newsletter to a public Telegram channel (no reaction buttons).
+
+    Args:
+        date: Date string (YYYY-MM-DD)
+        sections: Dict mapping section key to markdown content
+        channel_username: Channel username (with or without @)
+    """
+    token = get_bot_token()
+    app = Application.builder().token(token).build()
+    channel_id = f"@{channel_username.lstrip('@')}"
+
+    async with app:
+        weekday = __import__("datetime").datetime.strptime(date, "%Y-%m-%d").strftime("%A")
+        header = f"<b>🔬 Daily Science — {weekday}, {date}</b>\n<i>~7 min to feed your curiosity</i>"
+        await app.bot.send_message(chat_id=channel_id, text=header, parse_mode=ParseMode.HTML)
+
+        section_order = ["curiosity", "research", "quick_bites", "thesis_corner"]
+        for key in section_order:
+            if key not in sections:
+                continue
+            name = SECTION_NAMES.get(key, key)
+            text_html = _md_to_telegram_html(sections[key])
+            message = f"<b>{name}</b>\n\n{text_html}"
+
+            if len(message) > 4000:
+                mid = len(message) // 2
+                bp = message.rfind('\n', 0, mid)
+                if bp == -1:
+                    bp = mid
+                await app.bot.send_message(chat_id=channel_id, text=message[:bp], parse_mode=ParseMode.HTML)
+                await app.bot.send_message(chat_id=channel_id, text=message[bp:], parse_mode=ParseMode.HTML)
+            else:
+                await app.bot.send_message(chat_id=channel_id, text=message, parse_mode=ParseMode.HTML)
+
+            await asyncio.sleep(0.5)
+
+
 # ── Callback handlers (run by the listener) ─────────────────
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):

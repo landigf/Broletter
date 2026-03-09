@@ -211,6 +211,9 @@ def cmd_generate(args):
     if not args.no_send:
         _try_send(date, output_path, config, mark_sent)
 
+    # ── Publish to website ──
+    _publish_site(config)
+
     print("Done!")
 
 
@@ -234,9 +237,58 @@ def _try_send(date: str, output_path, config: dict, mark_sent):
         asyncio.run(send_newsletter(date, sections, paper_topics))
         mark_sent(date)
         print("✅ Delivered!")
+
+        # Publish to public channel if configured
+        channel = config.get("telegram", {}).get("channel_username")
+        if channel:
+            try:
+                from bot import publish_to_channel
+                asyncio.run(publish_to_channel(date, sections, channel))
+                print("📢 Published to channel!")
+            except Exception as e:
+                print(f"⚠️  Channel publish failed: {e}")
+
     except Exception as e:
         print(f"❌ Send failed (no WiFi?): {e}")
         print("   Will retry on next Mac wake.")
+
+
+def _publish_site(config: dict):
+    """Rebuild the static site and push to GitHub Pages."""
+    import subprocess
+
+    try:
+        from site_builder import build_site
+        channel = config.get("telegram", {}).get("channel_username")
+        build_site(channel)
+    except Exception as e:
+        print(f"⚠️  Site build failed: {e}")
+        return
+
+    # Auto-commit and push docs/
+    try:
+        subprocess.run(
+            ["git", "add", "docs/"],
+            cwd=str(ROOT), capture_output=True, check=True,
+        )
+        result = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "docs/"],
+            cwd=str(ROOT), capture_output=True,
+        )
+        if result.returncode == 0:
+            # No changes to commit
+            return
+        subprocess.run(
+            ["git", "commit", "-m", "site: update newsletter archive"],
+            cwd=str(ROOT), capture_output=True, check=True,
+        )
+        subprocess.run(
+            ["git", "push"],
+            cwd=str(ROOT), capture_output=True, check=True,
+        )
+        print("🚀 Website updated and pushed to GitHub")
+    except Exception as e:
+        print(f"⚠️  Git push failed (no WiFi?): {e}")
 
 
 def _parse_sections_from_markdown(md: str) -> dict[str, str]:

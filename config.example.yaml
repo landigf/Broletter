@@ -61,6 +61,12 @@ output:
   filename_format: "{date}.md"
   data_directory: "data"
 
+# Public Telegram channel for subscribers (optional).
+# Create a public channel, add your bot as admin, and put the username here.
+# Leave empty to disable channel publishing.
+telegram:
+  channel_username: ""
+
 schedule:
   daily_hour: 23
   daily_minute: 0

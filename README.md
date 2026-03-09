@@ -210,6 +210,28 @@ The system is biased toward exploration -- weights always drift back toward 1.0
 over time, so your newsletter never narrows down to a single topic.
 
 
+## Website
+
+Every newsletter is automatically published to a static website hosted on
+GitHub Pages. After each generation, the site is rebuilt and pushed -- no
+manual steps needed.
+
+The site lives at the URL GitHub Pages gives your repo (for the original:
+https://landigf.github.io/botletter/). Each issue gets its own page with
+clean typography and dark mode support.
+
+### Subscribe
+
+If you want to receive the newsletter on your phone, you can join the public
+Telegram channel linked on the website. The bot automatically cross-posts each
+issue there (without reaction buttons -- those are personal).
+
+To set up a public channel for your own fork:
+
+1. Create a public channel in Telegram (Settings → New Channel → Public)
+2. Add your bot as an admin with permission to post messages
+3. Set `telegram.channel_username` in `config.yaml` to your channel's username
+
 ## Architecture
 
 ```
@@ -220,6 +242,7 @@ generator.py             Newsletter generation via Gemini (google-genai SDK)
 templates.py             LLM prompt templates with tone rotation
 bot.py                   Telegram delivery, feedback collection, config commands
 store.py                 Persistence: history, feedback, knowledge map, config editing
+site_builder.py          Static site generator (output/*.md → docs/ HTML)
 scripts/
   install_schedule.py    macOS LaunchAgent installer (3 agents)
 data/
@@ -230,6 +253,10 @@ data/
   last_sent.txt          Idempotency guard for send retries
 output/
   YYYY-MM-DD.md          Archived newsletters (one per day, searchable)
+docs/
+  index.html             Website index (auto-generated, committed to git)
+  issues/*.html          Individual newsletter pages
+  style.css              Site stylesheet
 ```
 
 

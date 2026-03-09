@@ -84,6 +84,9 @@ output:
   filename_format: "{date}.md"
   data_directory: "data"
 
+telegram:
+  channel_username: ""   # Public channel for subscribers (e.g. "BroletterChannel"). Leave empty to disable.
+
 schedule:
   daily_hour: 23
   daily_minute: 0
