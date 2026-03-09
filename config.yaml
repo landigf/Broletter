@@ -1,0 +1,90 @@
+# ============================================================
+# Botletter Configuration
+# ============================================================
+
+reader:
+  name: "Gennaro"
+  background: "MSc Computer Science @ ETH Zürich (Data Management Systems; minor in ML)"
+  thesis_area: "Infrastructure pressure from AI/agentic workloads — caching, scheduling, resource management"
+  target_groups:
+    - "Ana Klimovic @ ETH Zürich (EASL)"
+    - "Marios Kogias @ Imperial College London"
+    - "Christos Kozyrakis @ Stanford University"
+    - "Matei Zaharia @ Stanford University"
+    - "Juncheng Yang @ Harvard University"
+
+format:
+  base_reading_time_minutes: 7   # adjusts based on your feedback
+  tone: "conversational"         # will alternate based on feedback
+  language: "en"
+
+arxiv:
+  primary_categories:
+    - "cs.DC"
+    - "cs.OS"
+    - "cs.DB"
+    - "cs.PF"
+    - "cs.NI"
+  secondary_categories:
+    - "cs.LG"
+    - "cs.AI"
+    - "cs.AR"
+    - "cs.CL"
+    - "cs.SE"
+    - "cs.CR"
+  max_papers_per_query: 10
+  days_lookback: 7
+
+curiosity_themes:
+  - "how things work (physics, engineering, nature)"
+  - "history of computing and technology"
+  - "mathematics and elegance"
+  - "aerospace and space exploration"
+  - "biomedical engineering and neuroscience"
+  - "visual computing and computer graphics"
+  - "automation and robotics"
+  - "networking and the internet"
+  - "operating systems and low-level computing"
+  - "distributed systems war stories"
+  - "cryptography and security"
+  - "data science and statistics"
+  - "programming languages and compilers"
+  - "energy, sustainability, and climate tech"
+  - "quantum computing"
+  - "materials science"
+
+thesis_keywords:
+  - "caching"
+  - "web caching"
+  - "CDN"
+  - "content delivery"
+  - "AI infrastructure"
+  - "LLM serving"
+  - "model serving"
+  - "inference optimization"
+  - "tail latency"
+  - "resource scheduling"
+  - "agentic workloads"
+  - "AI agents"
+  - "KV cache"
+  - "GPU scheduling"
+  - "serverless"
+  - "microservices"
+  - "datacenter"
+  - "cloud computing"
+  - "prefetching"
+  - "memory management"
+  - "quality of service"
+
+llm:
+  model: "gemini-2.5-flash"
+
+output:
+  directory: "output"
+  filename_format: "{date}.md"
+  data_directory: "data"
+
+schedule:
+  daily_hour: 23
+  daily_minute: 0
+  sunday_recap: true

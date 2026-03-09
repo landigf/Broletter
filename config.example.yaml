@@ -1,0 +1,67 @@
+# ============================================================
+# Botletter Configuration -- copy this to config.yaml and edit
+# ============================================================
+
+reader:
+  name: "Your Name"
+  background: "PhD Physics @ MIT (condensed matter; minor in applied math)"
+  thesis_area: "topological insulators and quantum transport"
+  target_groups:
+    - "Charlie Kane @ UPenn"
+    - "Claudia Felser @ MPI Dresden"
+
+format:
+  base_reading_time_minutes: 7   # adjusts based on your feedback
+  tone: "conversational"
+  language: "en"
+
+# arXiv categories to pull papers from.
+# Primary: always queried. Secondary: two random ones added each day for variety.
+# Full list: https://arxiv.org/category_taxonomy
+arxiv:
+  primary_categories:
+    - "cond-mat.mes-hall"
+    - "cond-mat.str-el"
+    - "quant-ph"
+  secondary_categories:
+    - "cond-mat.supr-con"
+    - "physics.app-ph"
+    - "cs.AI"
+    - "cs.LG"
+  max_papers_per_query: 10
+  days_lookback: 7
+
+# Broad curiosity themes for the "Deep Curiosity" section.
+# Keep this list wide -- half the value is stumbling into something unexpected.
+curiosity_themes:
+  - "how superconductors work at the atomic level"
+  - "history of computing and technology"
+  - "aerospace and space exploration"
+  - "marine biology and deep ocean ecosystems"
+  - "mathematics and elegance"
+  - "biomedical engineering and neuroscience"
+  - "programming languages and compilers"
+  - "cryptography and security"
+  - "energy, sustainability, and climate tech"
+
+# Keywords that flag an arXiv paper as relevant to YOUR thesis/research.
+# These papers go into the "Your Research Corner" section.
+thesis_keywords:
+  - "topological insulator"
+  - "quantum Hall effect"
+  - "spin-orbit coupling"
+  - "Berry phase"
+  - "quantum transport"
+
+llm:
+  model: "gemini-2.5-flash"
+
+output:
+  directory: "output"
+  filename_format: "{date}.md"
+  data_directory: "data"
+
+schedule:
+  daily_hour: 23
+  daily_minute: 0
+  sunday_recap: true

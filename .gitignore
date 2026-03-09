@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Personal data (generated at runtime)
+data/
+output/
+
+# Environment
+.env
