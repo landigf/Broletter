@@ -196,8 +196,9 @@ def build_site(channel_username: str | None = None):
     issues_dir = DOCS_DIR / "issues"
     issues_dir.mkdir(exist_ok=True)
 
-    # Write CSS
+    # Write CSS + .nojekyll marker
     (DOCS_DIR / "style.css").write_text(SITE_CSS)
+    (DOCS_DIR / ".nojekyll").touch()
 
     # Find all newsletters
     md_files = sorted(OUTPUT_DIR.glob("*.md"), reverse=True)
