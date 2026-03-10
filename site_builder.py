@@ -220,8 +220,8 @@ def _page_template(title: str, body: str, nav_back: bool = False, css_prefix: st
 {nav}
 {body}
 <div class="footer">
-    Botletter — an adaptive daily science newsletter by Gennaro Francesco Landi.<br>
-    Generated with <a href="https://github.com/landigf/botletter">Botletter</a>.
+    Broletter — an adaptive daily science newsletter by Gennaro Francesco Landi.<br>
+    Generated with <a href="https://github.com/landigf/Broletter">Broletter</a>.
     Powered by arXiv and Gemini.
 </div>
 </body>
@@ -292,7 +292,7 @@ def build_site(channel_username: str | None = None):
 
         body_html = _md_to_html(md_content)
         page = _page_template(
-            f"Botletter — {display_date}",
+            f"Broletter — {display_date}",
             body_html,
             nav_back=True,
             css_prefix="../",
@@ -346,7 +346,7 @@ document.getElementById('search').addEventListener('input', function() {
 
     index_body = f"""
 <div class="header">
-<h1>Botletter</h1>
+<h1>Broletter</h1>
 <p class="subtitle">A daily science newsletter by Gennaro Francesco Landi</p>
 <p class="subtitle">MSc Computer Science @ ETH Zurich</p>
 </div>
@@ -354,7 +354,7 @@ document.getElementById('search').addEventListener('input', function() {
 arXiv research. Each issue covers a deep curiosity topic, a research paper
 spotlight, quick bites from across science, and a section tied to my research
 area — infrastructure under AI/agentic workloads.</p>
-<p>Built with <a href="https://github.com/landigf/botletter">Botletter</a>,
+<p>Built with <a href="https://github.com/landigf/Broletter">Broletter</a>,
 an open-source pipeline anyone can fork and personalize.</p>
 {subscribe_html}
 <div class="nav"><a href="knowledge-map.html">Knowledge Map</a></div>
@@ -366,7 +366,7 @@ an open-source pipeline anyone can fork and personalize.</p>
 {search_js}
 """
 
-    index_page = _page_template("Botletter — Gennaro Francesco Landi", index_body)
+    index_page = _page_template("Broletter — Gennaro Francesco Landi", index_body)
     (DOCS_DIR / "index.html").write_text(index_page)
 
     # Build knowledge map page
@@ -423,7 +423,7 @@ document.getElementById('search').addEventListener('input', function() {{
 </script>
 """
 
-    page = _page_template("Botletter — Knowledge Map", body)
+    page = _page_template("Broletter — Knowledge Map", body)
     (DOCS_DIR / "knowledge-map.html").write_text(page)
 
 

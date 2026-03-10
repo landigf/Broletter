@@ -17,9 +17,9 @@ NEWSLETTER_DIR = Path(__file__).parent.parent.resolve()
 VENV_PYTHON = NEWSLETTER_DIR / ".venv" / "bin" / "python"
 LAUNCH_AGENTS_DIR = Path.home() / "Library" / "LaunchAgents"
 
-GENERATE_LABEL = "com.botletter.generate"
-REMINDER_LABEL = "com.botletter.reminder"
-SYNC_LABEL = "com.botletter.sync"
+GENERATE_LABEL = "com.Broletter.generate"
+REMINDER_LABEL = "com.Broletter.reminder"
+SYNC_LABEL = "com.Broletter.sync"
 
 # Legacy label to clean up
 LISTENER_LABEL = "com.gennaro.newsletter.listener"

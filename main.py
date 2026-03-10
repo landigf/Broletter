@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-main.py — Botletter: adaptive daily science newsletter
+main.py — Broletter: adaptive daily science newsletter
 
 Commands:
     python main.py generate              # Generate & send today's newsletter
@@ -34,7 +34,7 @@ def load_config() -> dict:
 
 def cmd_setup(args):
     """Interactive setup guide."""
-    print("🔬 Botletter — Setup\n")
+    print("🔬 Broletter — Setup\n")
 
     # Check Gemini
     key = os.environ.get("GEMINI_API_KEY", "")
@@ -436,7 +436,7 @@ def _assemble_markdown(date: str, sections: dict, research_paper: dict | None, t
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Botletter — adaptive daily science newsletter",
+        description="Broletter — adaptive daily science newsletter",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = parser.add_subparsers(dest="command")

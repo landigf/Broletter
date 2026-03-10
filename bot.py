@@ -289,7 +289,7 @@ async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     state["chat_id"] = chat_id
     save_telegram_state(state)
     await update.message.reply_text(
-        "🔬 Your Botletter is set up!\n\n"
+        "🔬 Your Broletter is set up!\n\n"
         "You'll get a daily newsletter with:\n"
         "💡 A deep curiosity topic\n"
         "📄 A real research paper explained\n"

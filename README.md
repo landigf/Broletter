@@ -1,4 +1,4 @@
-# Botletter
+# Broletter
 
 An adaptive, AI-generated daily science newsletter delivered to your phone via Telegram.
 Around 7 minutes of reading each morning -- real arXiv papers explained clearly,
@@ -39,8 +39,8 @@ Telegram bot API, macOS LaunchAgents.
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/landigf/botletter.git
-cd botletter
+git clone https://github.com/landigf/Broletter.git
+cd Broletter
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
@@ -217,7 +217,7 @@ GitHub Pages. After each generation, the site is rebuilt and pushed -- no
 manual steps needed.
 
 The site lives at the URL GitHub Pages gives your repo (for the original:
-https://landigf.github.io/botletter/). Each issue gets its own page with
+https://landigf.github.io/Broletter/). Each issue gets its own page with
 clean typography and dark mode support.
 
 ### Subscribe
