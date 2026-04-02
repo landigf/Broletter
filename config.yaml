@@ -12,6 +12,21 @@ reader:
     - "Christos Kozyrakis @ Stanford University"
     - "Matei Zaharia @ Stanford University"
     - "Juncheng Yang @ Harvard University"
+    # AI web traffic measurement
+    - "David Belson @ Cloudflare (head of data insight, Radar reports)"
+    - "Reid Tatoris @ Cloudflare (bot detection, Perplexity stealth crawler investigation)"
+    # Content monetization / trust protocols
+    - "Olivia Joslin @ TollBit (co-founder, AI content monetization)"
+    - "Toshit Panigrahi @ TollBit (co-founder, bot paywall infrastructure)"
+    # Agent benchmarking
+    - "Shuyan Zhou @ CMU (WebArena first author)"
+    - "Jing Yu Koh @ CMU (VisualWebArena)"
+    # Agentic Systems Lab
+    - "Robert Jakob @ ETH Zürich Agentic Systems Lab (co-director)"
+    - "Kevin O'Sullivan @ ETH Zürich Agentic Systems Lab (co-director)"
+    # Web standards and bot identity
+    - "Martijn Koster (original robots.txt author, 1994)"
+    - "Nikola Balic (external researcher, agentic AI web impact)"
 
 format:
   base_reading_time_minutes: 7   # adjusts based on your feedback
@@ -32,6 +47,10 @@ arxiv:
     - "cs.CL"
     - "cs.SE"
     - "cs.CR"
+    - "cs.CY"    # Computers and Society (web economics, content policy)
+    - "cs.IR"    # Information Retrieval (web crawling, search, indexing)
+    - "cs.MA"    # Multi-Agent Systems (agent coordination, mechanism design)
+    - "econ.GN"  # General Economics (marketplace design, platform economics)
   max_papers_per_query: 10
   days_lookback: 7
 
@@ -52,6 +71,27 @@ curiosity_themes:
   - "energy, sustainability, and climate tech"
   - "quantum computing"
   - "materials science"
+  # Historical protocol analogies
+  - "how open internet protocols get abused and then fixed (SMTP spam, DNS hijacking, BGP leaks)"
+  - "the history of email authentication — SPF, DKIM, DMARC and why it took 18 years"
+  - "how the music industry went from suing Napster users to building Spotify"
+  - "telephone robocall crisis and STIR/SHAKEN caller ID authentication"
+  - "the tragedy of the commons in shared digital infrastructure"
+  # Web economics and content marketplaces
+  - "how content licensing and micropayments work on the web"
+  - "the economics of web crawling — who pays for bandwidth and who profits"
+  - "how ad-supported web publishing survives when referral traffic dies"
+  - "platform economics and two-sided marketplaces in tech"
+  # Cryptographic identity and trust systems
+  - "how digital identity verification works — PKI, certificates, web of trust"
+  - "zero-knowledge proofs for privacy-preserving authentication"
+  - "reputation systems in distributed networks (eBay, Tor, Bitcoin)"
+  - "mechanism design and incentive-compatible protocols"
+  # Agent behavior and autonomy
+  - "how LLM agents plan and reason — ReAct, Tree of Thoughts, Reflexion"
+  - "browser automation and headless browsers — Puppeteer, Playwright, BrowserUse"
+  - "the ethics of AI systems that impersonate humans online"
+  - "autonomous agents interacting with real-world APIs and services"
 
 thesis_keywords:
   - "caching"
@@ -75,6 +115,54 @@ thesis_keywords:
   - "prefetching"
   - "memory management"
   - "quality of service"
+  # AI web traffic characterization
+  - "AI crawler"
+  - "AI bot traffic"
+  - "web scraping detection"
+  - "bot detection"
+  - "web traffic classification"
+  - "crawler identification"
+  - "agent traffic"
+  - "automated web browsing"
+  # Web protocol and standards
+  - "robots.txt"
+  - "robots exclusion"
+  - "web bot authentication"
+  - "crawl budget"
+  - "content licensing"
+  - "pay per crawl"
+  - "Really Simple Licensing"
+  - "RSL"
+  - "Web Bot Auth"
+  # Agent planning
+  - "ReAct agent"
+  - "web agent"
+  - "browser agent"
+  - "BrowserGym"
+  - "WebArena"
+  - "agentic browsing"
+  - "LLM web navigation"
+  - "agent trace"
+  - "agent trajectory"
+  - "tool use LLM"
+  # Trust and identity infrastructure
+  - "bot reputation"
+  - "agent authentication"
+  - "cryptographic identity"
+  - "DMARC"
+  - "STIR SHAKEN"
+  - "sender authentication"
+  - "incentive compatible"
+  - "mechanism design"
+  # Infrastructure impact
+  - "crawl-to-refer ratio"
+  - "origin server load"
+  - "CDN pressure"
+  - "cache miss rate"
+  - "bandwidth consumption"
+  - "rate limiting"
+  - "traffic shaping"
+  - "workload characterization"
 
 llm:
   model: "gemini-2.5-flash"

@@ -1,7 +1,7 @@
 # Broletter
 
 An adaptive, AI-generated daily science newsletter delivered to your phone via Telegram.
-Around 7 minutes of reading each morning -- real arXiv papers explained clearly,
+Around 7 minutes of reading each morning — real arXiv papers explained clearly,
 a deep curiosity topic, quick fascinating bites across fields, and a section
 tied to your research focus. All for $0/day.
 
@@ -13,62 +13,151 @@ a sharp eye on their own field.
 
 Every night at 11 PM, the system fetches fresh papers from arXiv, generates a
 personalized newsletter using Gemini (free tier), and delivers it to your
-Telegram chat. In the morning, when you open your laptop, a short reminder
-pings your phone so you can read it on the commute.
+Telegram chat. In the morning, a short reminder pings your phone so you
+can read it on the commute.
 
 You react to each section with inline buttons (love / meh / skip / more of this).
-The system learns gently from your feedback -- shifting weights just enough to
+The system learns gently from your feedback — shifting weights just enough to
 surface more of what you care about, without collapsing into a filter bubble.
 Exploration always wins long-term.
 
 | Section | Description |
 |---------|-------------|
-| **Deep Curiosity** | One fascinating topic in depth -- physics, aerospace, bio, history of computing |
+| **Deep Curiosity** | One fascinating topic in depth — physics, aerospace, bio, history of computing |
 | **Research Spotlight** | A real arXiv paper explained, with researcher backstories |
 | **Quick Bites** | Three mind-blowing facts from different fields |
 | **Your Research Corner** | Tied to your thesis area, referencing real labs and ongoing debates |
 | **Sunday Recap** | Weekly connections and emerging themes across everything you read |
 
 
-## Make your own
+## How it runs (battery and resources)
 
-This project is designed so anyone can fork it and run their own personalized
-newsletter. The whole pipeline is free: Gemini free tier, arXiv open API,
-Telegram bot API, macOS LaunchAgents.
+The newsletter uses **zero background processes**. It works like an alarm clock:
 
-### 1. Clone and install
+- Your computer's built-in scheduler (LaunchAgent on Mac, Task Scheduler on Windows)
+  wakes up Python for a few seconds at scheduled times
+- Python generates the newsletter, sends it to Telegram, then exits completely
+- Between runs, nothing is running — zero CPU, zero RAM, zero battery drain
+
+If your computer is asleep or off at the scheduled time, the task runs
+automatically the next time it wakes up. Nothing is lost.
+
+The whole process takes about 30-60 seconds and uses:
+- ~5 free API calls to Google Gemini
+- ~1 HTTP request to arXiv (free, no account needed)
+- ~3 HTTP requests to Telegram (free)
+
+
+---
+
+
+## Setup guide — macOS
+
+If you're on Windows, skip to the [Windows setup guide](#setup-guide--windows) below.
+
+
+### Step 1: Install Python (if you don't have it)
+
+Open **Terminal** (press `Cmd + Space`, type "Terminal", press Enter).
+
+Check if Python is installed:
+
+```bash
+python3 --version
+```
+
+If you see something like `Python 3.11.x` or higher, you're good — skip to Step 2.
+
+If not, install it with Homebrew:
+
+```bash
+# Install Homebrew (if you don't have it)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install Python
+brew install python
+```
+
+
+### Step 2: Download the project
+
+In Terminal, run:
 
 ```bash
 git clone https://github.com/landigf/Broletter.git
 cd Broletter
-python3 -m venv .venv && source .venv/bin/activate
+```
+
+
+### Step 3: Create a virtual environment and install dependencies
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Get your API keys (free)
+You should see packages installing. When it finishes, you're ready.
 
-You need two tokens, both free:
 
-- **Gemini API key**: go to https://aistudio.google.com/apikey, sign in with
-  Google, and create a key. The free tier gives you 1500 requests/day -- the
-  newsletter uses about 5.
-- **Telegram bot token**: open Telegram, search for `@BotFather`, send `/newbot`,
-  follow the prompts, and copy the token it gives you.
+### Step 4: Get your API keys (both free)
 
-Add both to your shell profile so they persist across sessions:
+You need two keys. Both are completely free.
+
+#### 4a. Gemini API key (for generating the newsletter)
+
+1. Go to https://aistudio.google.com/apikey
+2. Sign in with your Google account (any Gmail works)
+3. Click **"Create API Key"**
+4. Select any project (or create one — the name doesn't matter)
+5. Copy the key — it looks like `AIzaSy...` (about 40 characters)
+
+The free tier gives you 1500 requests per day. The newsletter uses about 5.
+
+#### 4b. Telegram bot token (for delivering the newsletter to your phone)
+
+1. Open Telegram on your phone
+2. Search for **@BotFather** (it has a blue checkmark)
+3. Tap **Start**, then send the message: `/newbot`
+4. BotFather will ask for a **name** — type anything you like (e.g., "My Science Newsletter")
+5. BotFather will ask for a **username** — this must end in `bot` (e.g., `my_science_bot`)
+6. BotFather will reply with your token — it looks like `1234567890:ABCdefGHIjklMNOpqrsTUVwxyz`
+7. Copy that token
+
+
+### Step 5: Save your keys
+
+Paste these two lines into Terminal, replacing the placeholder text with your actual keys:
 
 ```bash
-echo 'export GEMINI_API_KEY="your-key-here"' >> ~/.zshrc
-echo 'export TELEGRAM_BOT_TOKEN="your-token-here"' >> ~/.zshrc
+echo 'export GEMINI_API_KEY="paste-your-gemini-key-here"' >> ~/.zshrc
+echo 'export TELEGRAM_BOT_TOKEN="paste-your-telegram-token-here"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-### 3. Configure your interests
+This saves the keys permanently so they survive restarts.
 
-Open `config.yaml` and make it yours (see `config.example.yaml` for a template
-with a different field as reference). This is the most important step.
+To verify they're set:
 
-**reader** -- who you are:
+```bash
+echo $GEMINI_API_KEY
+echo $TELEGRAM_BOT_TOKEN
+```
+
+Both should print your keys (not empty lines).
+
+
+### Step 6: Configure your interests
+
+Open `config.yaml` in any text editor (TextEdit works, or VS Code if you have it).
+
+You can also copy the example config as a starting point:
+
+```bash
+cp config.example.yaml config.yaml
+```
+
+Edit these sections to match **your** interests:
 
 ```yaml
 reader:
@@ -78,90 +167,266 @@ reader:
   target_groups:
     - "Charlie Kane @ UPenn"
     - "Claudia Felser @ MPI Dresden"
-```
 
-**curiosity_themes** -- broad topics for the Deep Curiosity section. My
-suggestion: put your research focus in here, but keep the list wide. Half the
-value of a daily newsletter is stumbling into something you would never have
-searched for. If you only track your own subfield, you lose the serendipity that
-makes science fun. Include things you are curious about but would never allocate
-time to read about on your own.
-
-```yaml
 curiosity_themes:
   - "how superconductors work at the atomic level"
   - "history of computing and technology"
   - "aerospace and space exploration"
   - "marine biology and deep ocean ecosystems"
-  - "programming languages and compilers"
-  - "cryptography and security"
-```
 
-**arxiv categories** -- which arXiv categories to pull papers from. Primary ones
-are always queried; two random secondary ones are added each day for variety:
-
-```yaml
 arxiv:
   primary_categories:
     - "cond-mat.mes-hall"
-    - "cond-mat.str-el"
     - "quant-ph"
   secondary_categories:
-    - "cond-mat.supr-con"
     - "physics.app-ph"
     - "cs.AI"
-```
 
-**thesis_keywords** -- the system uses these to identify which fetched papers
-are relevant to your specific research and routes them to the Research Corner:
-
-```yaml
 thesis_keywords:
   - "topological insulator"
   - "quantum Hall effect"
   - "spin-orbit coupling"
-  - "Berry phase"
 ```
 
-### 4. Register your Telegram chat
+**Tip**: Keep your curiosity_themes list wide. Half the value of a daily newsletter
+is stumbling into something you'd never search for. If you only track your own
+subfield, you lose the serendipity that makes science fun.
+
+For arXiv category codes, see: https://arxiv.org/category_taxonomy
+
+
+### Step 7: Register your Telegram chat
 
 ```bash
+source .venv/bin/activate
 python main.py listen
 ```
 
-Open Telegram, find your bot by the name you gave it in BotFather, and send
-`/start`. You should see a confirmation. Press Ctrl+C to stop the listener.
+Now open Telegram on your phone, find your bot by the name you gave it, and send
+`/start`. You should see a confirmation message both in Telegram and in Terminal.
 
-### 5. Generate your first newsletter
+Press **Ctrl+C** in Terminal to stop the listener.
+
+
+### Step 8: Generate your first newsletter
 
 ```bash
 python main.py generate
 ```
 
-Check Telegram. Your newsletter should arrive in sections, each with reaction
-buttons.
+Wait about 30-60 seconds. Check Telegram — your newsletter should arrive in
+sections, each with reaction buttons (love / meh / skip / more of this).
 
-### 6. Automate it (macOS)
+
+### Step 9: Automate it (so it runs every night by itself)
 
 ```bash
 python scripts/install_schedule.py
 ```
 
-This installs three lightweight macOS LaunchAgents:
+This installs three lightweight scheduled tasks:
 
-- **Nightly generation** (11 PM) -- fetches your feedback, generates the
-  newsletter, sends it. Also runs at login/wake as a fallback if your Mac was
-  asleep at 11 PM. Idempotent: skips if already delivered, retries send-only
-  if generated but not sent (e.g. no WiFi last night).
-- **Command sync** (every 30 min) -- processes Telegram commands like
-  `/add_interest` and replies. Single HTTP call, negligible battery.
-- **Morning reminder** (at login/wake) -- pings Telegram so you see the
-  newsletter on your phone.
+| Task | When | What it does |
+|------|------|--------------|
+| **Generate** | 11 PM daily + on wake | Fetches feedback, generates newsletter, sends it |
+| **Sync** | Every 5 minutes | Processes Telegram commands (`/add_interest`, etc.) and button presses |
+| **Reminder** | Every 30 min (mornings only) | Pings Telegram so you see the newsletter on your phone |
 
-No background processes. Zero battery impact when the Mac is asleep.
+All tasks are **idempotent** — if your Mac was asleep at 11 PM, it generates
+the newsletter when it wakes up. If it already sent today's newsletter, it
+skips. You never get duplicates.
 
-On Linux, you can replicate this with cron or systemd timers -- the CLI
-commands are the same.
+**That's it! You're done.** Your newsletter will arrive every morning automatically.
+
+To check the logs if something goes wrong:
+
+```bash
+cat /tmp/com.botletter.generate.log
+cat /tmp/com.botletter.generate.err
+```
+
+
+---
+
+
+## Setup guide — Windows
+
+Complete beginner guide. No prior terminal experience needed.
+
+
+### Step 1: Install Python
+
+1. Go to https://www.python.org/downloads/
+2. Click the big yellow **"Download Python 3.x.x"** button
+3. Run the installer
+4. **IMPORTANT**: On the first screen, check the box that says **"Add Python to PATH"** (at the bottom). This is critical — don't skip it!
+5. Click **"Install Now"**
+6. When it finishes, click **"Close"**
+
+To verify it worked, open **PowerShell**:
+- Press `Win + X`, then click **"Windows PowerShell"** (or **"Terminal"**)
+- Type:
+
+```powershell
+python --version
+```
+
+You should see something like `Python 3.12.x`. If you see an error, restart
+your computer and try again (the PATH change needs a restart sometimes).
+
+
+### Step 2: Install Git
+
+1. Go to https://git-scm.com/download/win
+2. Download and run the installer
+3. Click **Next** through all the screens — the default settings are fine
+4. Click **Install**, then **Finish**
+
+
+### Step 3: Download the project
+
+Open PowerShell and run:
+
+```powershell
+cd Desktop
+git clone https://github.com/landigf/Broletter.git
+cd Broletter
+```
+
+This creates a `Broletter` folder on your Desktop.
+
+
+### Step 4: Create a virtual environment and install dependencies
+
+Still in PowerShell, run:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+If you see a red error about "execution policy", run this first and then try again:
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+
+### Step 5: Get your API keys (both free)
+
+#### 5a. Gemini API key (for generating the newsletter)
+
+1. Go to https://aistudio.google.com/apikey
+2. Sign in with your Google account (any Gmail works)
+3. Click **"Create API Key"**
+4. Select any project (or create one — the name doesn't matter)
+5. Copy the key — it looks like `AIzaSy...` (about 40 characters)
+
+#### 5b. Telegram bot token (for delivering the newsletter to your phone)
+
+1. Open Telegram on your phone
+2. Search for **@BotFather** (it has a blue checkmark)
+3. Tap **Start**, then send the message: `/newbot`
+4. BotFather asks for a **name** — type anything (e.g., "My Science Newsletter")
+5. BotFather asks for a **username** — must end in `bot` (e.g., `my_science_bot`)
+6. BotFather replies with your token — looks like `1234567890:ABCdefGHIjklMNOpqrsTUVwxyz`
+7. Copy that token
+
+
+### Step 6: Save your keys permanently
+
+In PowerShell, paste these two lines, replacing the placeholders with your actual keys:
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("GEMINI_API_KEY", "paste-your-gemini-key-here", "User")
+[System.Environment]::SetEnvironmentVariable("TELEGRAM_BOT_TOKEN", "paste-your-telegram-token-here", "User")
+```
+
+**Close PowerShell and open a new one** for the changes to take effect.
+
+To verify they're saved:
+
+```powershell
+echo $env:GEMINI_API_KEY
+echo $env:TELEGRAM_BOT_TOKEN
+```
+
+Both should print your keys.
+
+
+### Step 7: Configure your interests
+
+Open the file `config.yaml` inside the Broletter folder with **Notepad** (right-click
+the file → Open with → Notepad).
+
+You can also copy the example config first:
+
+```powershell
+copy config.example.yaml config.yaml
+```
+
+Edit the file to match your interests (see the [Configure your interests](#step-6-configure-your-interests)
+section in the macOS guide above for what each field means).
+
+**Important**: YAML files are sensitive to spacing. Use spaces (not tabs), and keep
+the indentation exactly as shown in the example.
+
+
+### Step 8: Register your Telegram chat
+
+In PowerShell:
+
+```powershell
+cd Desktop\Broletter
+.venv\Scripts\activate
+python main.py listen
+```
+
+Open Telegram on your phone, find your bot, and send `/start`.
+You should see a confirmation. Press **Ctrl+C** in PowerShell to stop.
+
+
+### Step 9: Generate your first newsletter
+
+```powershell
+python main.py generate
+```
+
+Wait about 30-60 seconds. Check Telegram — your newsletter should appear!
+
+
+### Step 10: Automate it (so it runs every night by itself)
+
+Open PowerShell **as Administrator** (right-click → "Run as Administrator"):
+
+```powershell
+cd Desktop\Broletter
+.venv\Scripts\activate
+python scripts\install_schedule_windows.py
+```
+
+This creates three scheduled tasks in Windows Task Scheduler:
+
+| Task | When | What it does |
+|------|------|--------------|
+| **Broletter_Generate** | 11 PM daily | Fetches feedback, generates newsletter, sends it |
+| **Broletter_Sync** | Every 5 minutes | Processes Telegram commands and button presses |
+| **Broletter_Reminder** | 7 AM daily | Pings Telegram so you see the newsletter |
+
+Your PC needs to be **on (not asleep)** at 11 PM for generation. If it's off,
+the newsletter generates the next time you log in.
+
+**That's it! You're done.**
+
+To check if the tasks are working:
+
+```powershell
+schtasks /Query /TN Broletter_Generate
+```
+
+
+---
 
 
 ## Usage
@@ -170,16 +435,18 @@ commands are the same.
 python main.py generate              # Generate + send today's newsletter
 python main.py generate --no-fetch   # LLM-only, skip arXiv
 python main.py generate --no-send    # Generate markdown only, don't send
+python main.py generate --no-publish # Don't rebuild/push the website
 python main.py remind                # Send morning Telegram reminder
 python main.py sync                  # Fetch and process pending Telegram commands
 python main.py listen                # Start Telegram bot for /start registration
 python main.py setup                 # Check what's configured
 ```
 
-### Telegram commands
+
+## Telegram commands
 
 You can manage your interests directly from Telegram, without editing config
-files. Casual input works -- the system uses Gemini to rephrase your message
+files. Casual input works — the system uses Gemini to rephrase your message
 into a clean config entry.
 
 | Command | Example | What it does |
@@ -192,45 +459,50 @@ into a clean config entry.
 | `/remove_researcher` | `/remove_researcher Zaharia` | Removes a researcher |
 | `/config` | `/config` | Shows all current settings |
 | `/history` | `/history` | Lists past newsletter dates |
+| `/help` | `/help` | Shows all available commands |
 
-### Feedback buttons
+**Note**: Telegram commands are processed every 5 minutes by the sync task.
+When you send a command, you'll get a reply within a few minutes (not instantly).
+
+
+## Feedback buttons
 
 Each section is delivered with inline reaction buttons:
 
-- **Love it** -- gentle boost to this section type (+0.05 weight, max 1.15x)
-- **Meh** -- slight decrease (-0.03, min 0.85x)
-- **Skip** -- a bit more decrease (-0.05, min 0.85x)
-- **More of this tomorrow** -- one-shot deep dive on the same topic next day
+- **Love it** — gentle boost to this section type (+0.05 weight, max 1.15x)
+- **Meh** — slight decrease (-0.03, min 0.85x)
+- **Skip** — a bit more decrease (-0.05, min 0.85x)
+- **More of this tomorrow** — one-shot deep dive on the same topic next day
 
 After the last section, a length feedback row: **Shorter / Perfect / Longer**.
 Each vote shifts reading time by 0.3 minutes, clamped to +/-1.5 from your base.
 
 The adaptation is intentionally gentle. A single "meh" does not kill a section.
-The system is biased toward exploration -- weights always drift back toward 1.0
+The system is biased toward exploration — weights always drift back toward 1.0
 over time, so your newsletter never narrows down to a single topic.
 
 
 ## Website
 
 Every newsletter is automatically published to a static website hosted on
-GitHub Pages. After each generation, the site is rebuilt and pushed -- no
+GitHub Pages. After each generation, the site is rebuilt and pushed — no
 manual steps needed.
 
 The site lives at the URL GitHub Pages gives your repo (for the original:
 https://landigf.github.io/Broletter/). Each issue gets its own page with
 clean typography and dark mode support.
 
-### Subscribe
+### Public Telegram channel
 
-If you want to receive the newsletter on your phone, you can join the public
-Telegram channel linked on the website. The bot automatically cross-posts each
-issue there (without reaction buttons -- those are personal).
-
-To set up a public channel for your own fork:
+To let others subscribe to your newsletter via a public Telegram channel:
 
 1. Create a public channel in Telegram (Settings → New Channel → Public)
 2. Add your bot as an admin with permission to post messages
 3. Set `telegram.channel_username` in `config.yaml` to your channel's username
+
+The bot automatically cross-posts each issue there (without reaction buttons —
+those are personal).
+
 
 ## Architecture
 
@@ -245,6 +517,8 @@ store.py                 Persistence: history, feedback, knowledge map, config e
 site_builder.py          Static site generator (output/*.md → docs/ HTML)
 scripts/
   install_schedule.py    macOS LaunchAgent installer (3 agents)
+  install_schedule_windows.py  Windows Task Scheduler installer (3 tasks)
+  launch_main.py         macOS bootstrap (runs main.py from base Python + venv packages)
 data/
   history.json           Papers seen, themes used, quick bite topics
   feedback.json          Reactions, length preferences, adaptation weights
@@ -260,22 +534,51 @@ docs/
 ```
 
 
-## How the feedback loop works
+## Troubleshooting
 
-1. Before generating, the system fetches all pending Telegram updates (reactions,
-   commands) from the last 24 hours. Telegram stores them server-side, so no
-   persistent listener is needed.
-2. Reactions update section weights in `feedback.json`. The adaptation formula
-   uses small deltas (+0.05 for love, -0.03 for meh, -0.05 for skip), clamped
-   to [0.85, 1.15]. This keeps the newsletter exploring broadly while still
-   responding to your taste.
-3. Length feedback shifts the target reading time by 0.3 minutes per vote,
-   clamped to +/-1.5 minutes from your configured base (default: 7 minutes).
-4. "More tomorrow" requests are stored and injected into the Research Corner
-   prompt the next day, then marked as delivered (one-shot).
-5. The knowledge map (`data/knowledge-map.md`) grows with every issue, tracking
-   which topics, papers, and themes have been covered. The Sunday recap draws
-   connections across the week.
+### Newsletter not generating
+
+Check the error log:
+
+```bash
+# macOS
+cat /tmp/com.botletter.generate.err
+
+# Windows (PowerShell)
+schtasks /Query /TN Broletter_Generate /V
+```
+
+Common causes:
+- **Python path changed** (e.g., Homebrew upgrade): re-run `python scripts/install_schedule.py`
+- **API key expired or missing**: check with `echo $GEMINI_API_KEY` (Mac) or `echo $env:GEMINI_API_KEY` (Windows)
+- **No internet at 11 PM**: the newsletter will retry on next wake/login automatically
+
+### Telegram commands not responding
+
+Commands are processed every 5 minutes by the sync task. If nothing happens
+after 10 minutes, check if the sync task is running:
+
+```bash
+# macOS
+launchctl list | grep botletter
+
+# Windows
+schtasks /Query /TN Broletter_Sync
+```
+
+### Manual test
+
+To test everything works right now:
+
+```bash
+# macOS
+source .venv/bin/activate
+python main.py generate --no-publish
+
+# Windows
+.venv\Scripts\activate
+python main.py generate --no-publish
+```
 
 
 ## Cost
@@ -285,7 +588,7 @@ docs/
 | Gemini 2.5 Flash | Free tier (1500 req/day, newsletter uses ~5) |
 | arXiv API | Free, no authentication |
 | Telegram Bot API | Free |
-| macOS LaunchAgent | Built-in |
+| macOS LaunchAgent / Windows Task Scheduler | Built-in |
 
 Total: **$0/day**.
 
@@ -293,7 +596,7 @@ Total: **$0/day**.
 ## Requirements
 
 - Python 3.11+
-- macOS (for LaunchAgent automation; the CLI works anywhere)
+- macOS or Windows 10/11
 - A Google account (for Gemini API key)
 - A Telegram account (for the bot)
 

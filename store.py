@@ -5,6 +5,8 @@ All data lives in the data/ directory as JSON files.
 """
 
 import json
+import os
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -15,20 +17,48 @@ def _ensure_dir():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def _read_json(path: Path, default):
+    if not path.exists():
+        return default
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _atomic_write_text(path: Path, content: str):
+    _ensure_dir()
+    fd, tmp_name = tempfile.mkstemp(
+        dir=path.parent,
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+        text=True,
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(content)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_name, path)
+    finally:
+        if os.path.exists(tmp_name):
+            os.unlink(tmp_name)
+
+
+def _write_json(path: Path, payload):
+    _atomic_write_text(path, json.dumps(payload, indent=2))
+
+
 # ── History (papers seen, themes used) ──────────────────────
 
 def load_history() -> dict:
     path = DATA_DIR / "history.json"
-    if path.exists():
-        with open(path) as f:
-            return json.load(f)
-    return {"papers_seen": [], "themes_used": [], "quick_bite_topics": []}
+    return _read_json(
+        path,
+        {"papers_seen": [], "themes_used": [], "quick_bite_topics": []},
+    )
 
 
 def save_history(history: dict):
-    _ensure_dir()
-    with open(DATA_DIR / "history.json", "w") as f:
-        json.dump(history, f, indent=2)
+    _write_json(DATA_DIR / "history.json", history)
 
 
 # ── Feedback ────────────────────────────────────────────────
@@ -56,10 +86,7 @@ def load_feedback() -> dict:
     }
     """
     path = DATA_DIR / "feedback.json"
-    if path.exists():
-        with open(path) as f:
-            return json.load(f)
-    return {
+    return _read_json(path, {
         "reactions": [],
         "length_feedback": [],
         "more_requests": [],
@@ -68,13 +95,11 @@ def load_feedback() -> dict:
             "theme_weights": {},
             "section_weights": {},
         },
-    }
+    })
 
 
 def save_feedback(feedback: dict):
-    _ensure_dir()
-    with open(DATA_DIR / "feedback.json", "w") as f:
-        json.dump(feedback, f, indent=2)
+    _write_json(DATA_DIR / "feedback.json", feedback)
 
 
 def record_reaction(date: str, section: str, reaction: str):
@@ -216,24 +241,18 @@ def append_to_knowledge_map(date: str, entries: list[str]):
 
 def load_telegram_state() -> dict:
     path = DATA_DIR / "telegram.json"
-    if path.exists():
-        with open(path) as f:
-            return json.load(f)
-    return {}
+    return _read_json(path, {})
 
 
 def save_telegram_state(state: dict):
-    _ensure_dir()
-    with open(DATA_DIR / "telegram.json", "w") as f:
-        json.dump(state, f, indent=2)
+    _write_json(DATA_DIR / "telegram.json", state)
 
 
 # ── Send status tracking ────────────────────────────────────
 
 def mark_sent(date: str):
     """Mark a newsletter as successfully sent to Telegram."""
-    _ensure_dir()
-    (DATA_DIR / "last_sent.txt").write_text(date)
+    _atomic_write_text(DATA_DIR / "last_sent.txt", date)
 
 
 def was_sent(date: str) -> bool:

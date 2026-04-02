@@ -45,6 +45,14 @@ SECTION_NAMES = {
     "recap": "🔄 Weekly Recap",
 }
 
+GET_UPDATES_TIMEOUTS = {
+    "timeout": 1,
+    "connect_timeout": 5,
+    "read_timeout": 5,
+    "write_timeout": 5,
+    "pool_timeout": 5,
+}
+
 
 def get_bot_token() -> str:
     token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
@@ -388,6 +396,27 @@ async def handle_config(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(summary, parse_mode=ParseMode.HTML)
 
 
+async def handle_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = (
+        "<b>📋 Available Commands</b>\n\n"
+        "<b>Interests &amp; Topics</b>\n"
+        "/add_interest &lt;topic&gt; — add a broad interest area\n"
+        "  <i>e.g. /add_interest quantum biology</i>\n"
+        "/remove_interest &lt;topic&gt; — remove an interest\n\n"
+        "/add_topic &lt;topic&gt; — add a specific technical topic\n"
+        "  <i>e.g. /add_topic KV cache eviction</i>\n"
+        "/remove_topic &lt;topic&gt; — remove a topic\n\n"
+        "/add_researcher &lt;name @ institution&gt; — follow a researcher\n"
+        "  <i>e.g. /add_researcher Ion Stoica @ UC Berkeley</i>\n"
+        "/remove_researcher &lt;name&gt; — unfollow a researcher\n\n"
+        "<b>Info</b>\n"
+        "/config — show all current interests, topics &amp; researchers\n"
+        "/history — list past newsletter issues\n"
+        "/help — show this message"
+    )
+    await update.message.reply_text(text, parse_mode=ParseMode.HTML)
+
+
 def run_listener():
     """Run the Telegram bot in polling mode to listen for feedback."""
     token = get_bot_token()
@@ -402,6 +431,7 @@ def run_listener():
     app.add_handler(CommandHandler("remove_topic", handle_remove_topic))
     app.add_handler(CommandHandler("remove_researcher", handle_remove_researcher))
     app.add_handler(CommandHandler("config", handle_config))
+    app.add_handler(CommandHandler("help", handle_help))
     app.add_handler(CallbackQueryHandler(handle_callback))
 
     print("🤖 Telegram bot listening for feedback... (Ctrl+C to stop)")
@@ -445,6 +475,27 @@ async def _process_text_command(bot: Bot, chat_id: int, text: str):
         state = load_telegram_state()
         state["chat_id"] = chat_id
         save_telegram_state(state)
+        # fall through to send help message
+
+    if text.startswith("/start") or text == "/help":
+        help_text = (
+            "<b>📋 Available Commands</b>\n\n"
+            "<b>Interests &amp; Topics</b>\n"
+            "/add_interest &lt;topic&gt; — add a broad interest area\n"
+            "  <i>e.g. /add_interest quantum biology</i>\n"
+            "/remove_interest &lt;topic&gt; — remove an interest\n\n"
+            "/add_topic &lt;topic&gt; — add a specific technical topic\n"
+            "  <i>e.g. /add_topic KV cache eviction</i>\n"
+            "/remove_topic &lt;topic&gt; — remove a topic\n\n"
+            "/add_researcher &lt;name @ institution&gt; — follow a researcher\n"
+            "  <i>e.g. /add_researcher Ion Stoica @ UC Berkeley</i>\n"
+            "/remove_researcher &lt;name&gt; — unfollow a researcher\n\n"
+            "<b>Info</b>\n"
+            "/config — show all current interests, topics &amp; researchers\n"
+            "/history — list past newsletter issues\n"
+            "/help — show this message"
+        )
+        await bot.send_message(chat_id=chat_id, text=help_text, parse_mode=ParseMode.HTML)
         return True
 
     for cmd, func in _COMMAND_MAP.items():
@@ -469,7 +520,7 @@ async def _fetch_feedback_async():
     offset = None
 
     while True:
-        updates = await bot.get_updates(offset=offset, timeout=1)
+        updates = await bot.get_updates(offset=offset, **GET_UPDATES_TIMEOUTS)
         if not updates:
             break
         for update in updates:

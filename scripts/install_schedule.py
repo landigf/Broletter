@@ -10,19 +10,78 @@ No persistent listener needed — feedback is fetched from Telegram right before
 """
 
 import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
 NEWSLETTER_DIR = Path(__file__).parent.parent.resolve()
 VENV_PYTHON = NEWSLETTER_DIR / ".venv" / "bin" / "python"
+BOOTSTRAP_PY = NEWSLETTER_DIR / "scripts" / "launch_main.py"
 LAUNCH_AGENTS_DIR = Path.home() / "Library" / "LaunchAgents"
 
-GENERATE_LABEL = "com.Broletter.generate"
-REMINDER_LABEL = "com.Broletter.reminder"
-SYNC_LABEL = "com.Broletter.sync"
 
-# Legacy label to clean up
-LISTENER_LABEL = "com.gennaro.newsletter.listener"
+def _find_stable_python() -> Path:
+    """Find a Python interpreter path that survives Homebrew upgrades.
+
+    Problem: sys._base_executable resolved via .resolve() gives a path like
+    /opt/homebrew/Cellar/python@3.13/3.13.7/.../python3.13 — this breaks
+    when `brew upgrade python` bumps the version (3.13.7 → 3.13.12 etc.).
+
+    Solution: prefer the stable /opt/homebrew/bin/python3.X symlink, which
+    Homebrew always keeps pointing at the current Cellar version.
+    Fallback: shutil.which('python3'), then sys.executable.
+    """
+    # The venv records which interpreter created it — use that version
+    venv_python = NEWSLETTER_DIR / ".venv" / "bin" / "python"
+    if venv_python.exists():
+        # Read the version from the venv's python
+        try:
+            result = subprocess.run(
+                [str(venv_python), "-c", "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"],
+                capture_output=True, text=True, check=True,
+            )
+            ver = result.stdout.strip()
+        except Exception:
+            ver = f"{sys.version_info.major}.{sys.version_info.minor}"
+    else:
+        ver = f"{sys.version_info.major}.{sys.version_info.minor}"
+
+    # Prefer stable Homebrew symlink (survives `brew upgrade`)
+    homebrew_stable = Path(f"/opt/homebrew/bin/python{ver}")
+    if homebrew_stable.exists():
+        return homebrew_stable
+
+    # Fallback: /usr/local/bin (Intel Mac Homebrew or python.org install)
+    usrlocal = Path(f"/usr/local/bin/python{ver}")
+    if usrlocal.exists():
+        return usrlocal
+
+    # Fallback: whatever is on PATH
+    found = shutil.which(f"python{ver}") or shutil.which("python3")
+    if found:
+        return Path(found)
+
+    # Last resort: sys executable (may be a pyenv shim, but better than nothing)
+    return Path(getattr(sys, "_base_executable", sys.executable))
+
+
+BASE_PYTHON = _find_stable_python()
+
+GENERATE_LABEL = "com.botletter.generate"
+REMINDER_LABEL = "com.botletter.reminder"
+SYNC_LABEL = "com.botletter.sync"
+
+# Legacy labels to clean up
+LEGACY_LABELS = [
+    "com.Broletter.generate",
+    "com.Broletter.reminder",
+    "com.Broletter.sync",
+    "com.gennaro.newsletter.generate",
+    "com.gennaro.newsletter.reminder",
+    "com.gennaro.newsletter.sync",
+    "com.gennaro.newsletter.listener",
+]
 
 
 def get_env_vars() -> dict[str, str]:
@@ -35,6 +94,17 @@ def get_env_vars() -> dict[str, str]:
             sys.exit(1)
         env[key] = val
     env["PYTHONUNBUFFERED"] = "1"
+    env["PATH"] = ":".join(
+        [
+            str(BASE_PYTHON.parent),
+            "/opt/homebrew/bin",
+            "/usr/local/bin",
+            "/usr/bin",
+            "/bin",
+            "/usr/sbin",
+            "/sbin",
+        ]
+    )
     return env
 
 
@@ -114,6 +184,37 @@ def write_plist(label: str, args: list[str], env: dict, calendar: dict | None = 
     return plist_path
 
 
+def _launchctl(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["launchctl", *args],
+        capture_output=True,
+        text=True,
+    )
+
+
+def _unload_plist(plist: Path):
+    domain = f"gui/{os.getuid()}"
+    _launchctl("bootout", domain, str(plist))
+    _launchctl("unload", str(plist))
+
+
+def _load_plist(plist: Path):
+    domain = f"gui/{os.getuid()}"
+    result = _launchctl("bootstrap", domain, str(plist))
+    if result.returncode == 0:
+        return
+
+    legacy = _launchctl("load", str(plist))
+    if legacy.returncode == 0:
+        return
+
+    raise RuntimeError(
+        f"launchctl failed for {plist.name}\n"
+        f"bootstrap: {result.stderr.strip() or result.stdout.strip()}\n"
+        f"load: {legacy.stderr.strip() or legacy.stdout.strip()}"
+    )
+
+
 def main():
     print("📅 Installing newsletter schedule...\n")
 
@@ -121,25 +222,25 @@ def main():
         print(f"❌ Virtual env not found at {VENV_PYTHON}")
         print("   Run: python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt")
         sys.exit(1)
+    if not BOOTSTRAP_PY.exists():
+        print(f"❌ Bootstrap script not found at {BOOTSTRAP_PY}")
+        sys.exit(1)
+    if not BASE_PYTHON.exists():
+        print(f"❌ Base Python not found at {BASE_PYTHON}")
+        sys.exit(1)
 
     env = get_env_vars()
     LAUNCH_AGENTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    python = str(VENV_PYTHON)
-    main_py = str(NEWSLETTER_DIR / "main.py")
+    python = str(BASE_PYTHON)
+    bootstrap_py = str(BOOTSTRAP_PY)
 
-    # Unload existing (ignore errors) — includes legacy labels
-    legacy_labels = [
-        "com.gennaro.newsletter.generate",
-        "com.gennaro.newsletter.reminder",
-        "com.gennaro.newsletter.sync",
-        LISTENER_LABEL,
-    ]
-    for label in (GENERATE_LABEL, REMINDER_LABEL, SYNC_LABEL, *legacy_labels):
+    # Unload existing (ignore errors) — includes legacy labels.
+    for label in (GENERATE_LABEL, REMINDER_LABEL, SYNC_LABEL, *LEGACY_LABELS):
         plist = LAUNCH_AGENTS_DIR / f"{label}.plist"
         if plist.exists():
-            os.system(f"launchctl unload {plist} 2>/dev/null")
-            if label != GENERATE_LABEL and label != REMINDER_LABEL and label != SYNC_LABEL:
+            _unload_plist(plist)
+            if label in LEGACY_LABELS:
                 plist.unlink()
                 print(f"🗑  Removed legacy agent: {label}")
 
@@ -149,12 +250,12 @@ def main():
     #    Idempotent: skips if already generated+sent, retries send if generated but not sent.
     gen_path = write_plist(
         GENERATE_LABEL,
-        [python, main_py, "generate"],
+        [python, bootstrap_py, "generate"],
         env,
         calendar={"Hour": 23, "Minute": 0},
         run_at_load=True,
     )
-    os.system(f"launchctl load {gen_path}")
+    _load_plist(gen_path)
     print(f"✅ Nightly generation (11 PM + retry at wake) → {gen_path}")
 
     # 2. Periodic sync — fetches & processes Telegram commands every 5 min
@@ -163,12 +264,12 @@ def main():
     #    Single HTTP call, <1s, negligible battery.
     sync_path = write_plist(
         SYNC_LABEL,
-        [python, main_py, "sync"],
+        [python, bootstrap_py, "sync"],
         env,
         interval_seconds=300,  # 5 minutes
     )
-    os.system(f"launchctl load {sync_path}")
-    print(f"✅ Command sync (every 30 min) → {sync_path}")
+    _load_plist(sync_path)
+    print(f"✅ Command sync (every 5 min) → {sync_path}")
 
     # 3. Morning reminder — checks every 30 min + at login
     #    Sends a short Telegram ping so you see the newsletter on the bus.
@@ -176,12 +277,12 @@ def main():
     #    during morning hours. Outside that window it silently skips.
     rem_path = write_plist(
         REMINDER_LABEL,
-        [python, main_py, "remind"],
+        [python, bootstrap_py, "remind"],
         env,
         interval_seconds=1800,  # 30 minutes — morning guard handles the rest
         run_at_load=True,
     )
-    os.system(f"launchctl load {rem_path}")
+    _load_plist(rem_path)
     print(f"✅ Morning reminder (at wake/login) → {rem_path}")
 
     print("\nDone! Flow:")
