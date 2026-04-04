@@ -193,12 +193,16 @@ def _launchctl(*args: str) -> subprocess.CompletedProcess[str]:
 
 
 def _unload_plist(plist: Path):
+    if sys.platform != "darwin":
+        return
     domain = f"gui/{os.getuid()}"
     _launchctl("bootout", domain, str(plist))
     _launchctl("unload", str(plist))
 
 
 def _load_plist(plist: Path):
+    if sys.platform != "darwin":
+        return
     domain = f"gui/{os.getuid()}"
     result = _launchctl("bootstrap", domain, str(plist))
     if result.returncode == 0:
@@ -213,6 +217,71 @@ def _load_plist(plist: Path):
         f"bootstrap: {result.stderr.strip() or result.stdout.strip()}\n"
         f"load: {legacy.stderr.strip() or legacy.stdout.strip()}"
     )
+
+def _install_cron_linux(env: dict[str, str], python: str, bootstrap_py: str):
+    print("🐧 Installing cron jobs for Linux...")
+    CRON_MARKER_START = "# BEGIN BROLETTER SCHEDULE"
+    CRON_MARKER_END = "# END BROLETTER SCHEDULE"
+    
+    try:
+        result = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+        current_cron = result.stdout
+    except FileNotFoundError:
+        print("❌ 'crontab' command not found. Cannot install schedule.")
+        sys.exit(1)
+    except subprocess.CalledProcessError:
+        # no crontab for user
+        current_cron = ""
+
+    lines = current_cron.splitlines()
+    new_lines = []
+    in_block = False
+    for line in lines:
+        if line.strip() == CRON_MARKER_START:
+            in_block = True
+            continue
+        if line.strip() == CRON_MARKER_END:
+            in_block = False
+            continue
+        if not in_block:
+            new_lines.append(line)
+            
+    # remove trailing empties
+    while new_lines and not new_lines[-1].strip():
+        new_lines.pop()
+        
+    env_str = f"GEMINI_API_KEY=\"{env.get('GEMINI_API_KEY')}\" TELEGRAM_BOT_TOKEN=\"{env.get('TELEGRAM_BOT_TOKEN')}\" PYTHONUNBUFFERED=1"
+    
+    cron_jobs = [
+        f"0 23 * * * cd {NEWSLETTER_DIR} && {env_str} {python} {bootstrap_py} generate >> /tmp/{GENERATE_LABEL}.log 2>> /tmp/{GENERATE_LABEL}.err",
+        f"@reboot cd {NEWSLETTER_DIR} && {env_str} {python} {bootstrap_py} generate >> /tmp/{GENERATE_LABEL}.log 2>> /tmp/{GENERATE_LABEL}.err",
+        
+        f"*/5 * * * * cd {NEWSLETTER_DIR} && {env_str} {python} {bootstrap_py} sync >> /tmp/{SYNC_LABEL}.log 2>> /tmp/{SYNC_LABEL}.err",
+        
+        f"*/30 * * * * cd {NEWSLETTER_DIR} && {env_str} {python} {bootstrap_py} remind >> /tmp/{REMINDER_LABEL}.log 2>> /tmp/{REMINDER_LABEL}.err",
+        f"@reboot cd {NEWSLETTER_DIR} && {env_str} {python} {bootstrap_py} remind >> /tmp/{REMINDER_LABEL}.log 2>> /tmp/{REMINDER_LABEL}.err",
+    ]
+    
+    new_lines.append("")
+    new_lines.append(CRON_MARKER_START)
+    new_lines.extend(cron_jobs)
+    new_lines.append(CRON_MARKER_END)
+    new_lines.append("")
+    
+    new_cron = "\n".join(new_lines)
+    
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        f.write(new_cron)
+        temp_path = f.name
+        
+    try:
+        subprocess.run(["crontab", temp_path], check=True)
+    finally:
+        os.unlink(temp_path)
+        
+    print("✅ Installed via crontab successfully")
+
 
 
 def main():
@@ -243,6 +312,16 @@ def main():
             if label in LEGACY_LABELS:
                 plist.unlink()
                 print(f"🗑  Removed legacy agent: {label}")
+
+    if sys.platform != "darwin":
+        _install_cron_linux(env, python, bootstrap_py)
+        print("\nDone! Cron jobs installed.")
+        print(f"\nLogs:")
+        print(f"  /tmp/{GENERATE_LABEL}.log")
+        print(f"  /tmp/{SYNC_LABEL}.log")
+        print(f"  /tmp/{REMINDER_LABEL}.log")
+        print("\nTo uninstall, edit your crontab using `crontab -e` and remove the BROLETTER SCHEDULER lines.")
+        return
 
     # 1. Nightly newsletter generation at 11 PM + RunAtLoad fallback
     #    Fetches pending feedback from Telegram, then generates & sends.
